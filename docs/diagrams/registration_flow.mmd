@@ -1,0 +1,31 @@
+sequenceDiagram
+    autonumber
+    actor Owner as Land Owner
+    participant Portal as React Frontend
+    participant API as Express API
+    participant DB as PostgreSQL
+    participant Chain as LandRegistry.sol
+    actor Registrar as Sub-Registrar
+
+    Owner->>Portal: Connect MetaMask Wallet & Sign Nonce
+    Portal->>API: POST /api/wallet/link
+    API-->>Portal: Wallet Linked & Verified
+
+    Owner->>Portal: Enter Cadastral Data & Upload Title Deed
+    Portal->>Portal: Compute Client-Side SHA-256 Hash
+    Portal->>API: POST /api/lands & POST /api/documents/upload
+    API->>DB: Insert Land (PENDING_VERIFICATION) & LandDocument
+    API-->>Portal: Application Created
+
+    Registrar->>Portal: Inspect Application & Title Documents
+    Registrar->>Portal: Test SHA-256 Hash Integrity
+    Registrar->>Portal: Click "Approve On-Chain"
+    Portal->>API: POST /api/registrations/:id/approve
+
+    API->>DB: Update Land status to BLOCKCHAIN_PENDING
+    API->>Chain: registerLand(propertyId, surveyNo, ownerWallet, docHash)
+    Chain-->>API: Emit LandRegistered & Return Tx Receipt
+    API->>DB: Update Land status to REGISTERED & store Tx Hash
+    API->>DB: Record BlockchainTransaction & AuditLog
+    API-->>Portal: Registration Confirmed
+    Portal-->>Registrar: Show Mining Proof & Tx Hash

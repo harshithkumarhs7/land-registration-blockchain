@@ -1,0 +1,75 @@
+erDiagram
+    USER ||--o{ LAND : owns
+    USER ||--o{ LAND_DOCUMENT : uploads
+    USER ||--o{ REGISTRATION_APPLICATION : submits
+    USER ||--o{ TRANSFER_REQUEST : initiates_as_seller
+    USER ||--o{ TRANSFER_REQUEST : targets_as_buyer
+    USER ||--o{ NOTIFICATION : receives
+    USER ||--o{ AUDIT_LOG : triggers
+
+    LAND ||--|{ LAND_DOCUMENT : contains
+    LAND ||--o{ OWNERSHIP_HISTORY : records
+    LAND ||--o{ REGISTRATION_APPLICATION : has
+    LAND ||--o{ TRANSFER_REQUEST : subject_of
+    LAND ||--o{ BLOCKCHAIN_TRANSACTION : referenced_in
+
+    USER {
+        string id PK
+        string name
+        string email UK
+        string passwordHash
+        string role
+        string walletAddress UK
+        string status
+    }
+
+    LAND {
+        string id PK
+        string propertyId UK
+        string surveyNumber
+        string ownerId FK
+        float area
+        string landType
+        string district
+        float latitude
+        float longitude
+        string status
+        string blockchainTxHash
+    }
+
+    LAND_DOCUMENT {
+        string id PK
+        string landId FK
+        string documentType
+        string fileHash
+        string storagePath
+        string verificationStatus
+    }
+
+    OWNERSHIP_HISTORY {
+        string id PK
+        string landId FK
+        string previousOwnerId FK
+        string newOwnerId FK
+        string blockchainTxHash
+        datetime transferredAt
+    }
+
+    TRANSFER_REQUEST {
+        string id PK
+        string landId FK
+        string sellerId FK
+        string buyerId FK
+        string status
+        string blockchainTxHash
+    }
+
+    BLOCKCHAIN_TRANSACTION {
+        string id PK
+        string landId FK
+        string transactionHash UK
+        int blockNumber
+        string transactionType
+        string status
+        string gasUsed
+    }

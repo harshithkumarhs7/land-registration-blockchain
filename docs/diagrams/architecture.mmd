@@ -1,0 +1,14 @@
+flowchart TD
+    Client["React Frontend Portal\n(Vite + Tailwind + Leaflet)"]
+    MetaMask["MetaMask Wallet\n(ECDSA Signature / EIP-712)"]
+    API["Express REST API Gateway\n(TypeScript + Helmet + RateLimit)"]
+    Prisma[("PostgreSQL / Prisma ORM\n(Users, Lands, Docs, Audits)")]
+    Storage["Sanitized Document Vault\n(Deterministic SHA-256 Hashing)"]
+    Contract["LandRegistry.sol\n(OpenZeppelin AccessControl + ReentrancyGuard)"]
+
+    Client -->|HTTPS REST| API
+    MetaMask -.->|Sign Nonce / Tx| Client
+    API -->|Prisma Client| Prisma
+    API -->|FS Upload / Hash| Storage
+    API -->|ethers.js JsonRpcProvider| Contract
+    Contract -.->|Events: LandRegistered, OwnershipTransferred| API

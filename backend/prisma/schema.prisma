@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  name           String
+  email          String    @unique
+  passwordHash   String
+  role           String    @default("BUYER") // ADMIN, REGISTRAR, LAND_OWNER, BUYER
+  walletAddress  String?   @unique
+  phone          String?
+  status         String    @default("ACTIVE") // ACTIVE, SUSPENDED
+  nonce          String?
+  nonceExpiresAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  landsOwned                 Land[]                    @relation("LandCurrentOwner")
+  documentsUploaded          LandDocument[]            @relation("UserUploadedDocs")
+  registrationApplications   RegistrationApplication[] @relation("ApplicantApplications")
+  reviewedApplications       RegistrationApplication[] @relation("RegistrarReviewedApplications")
+  transferRequestsAsSeller   TransferRequest[]         @relation("SellerTransfers")
+  transferRequestsAsBuyer    TransferRequest[]         @relation("BuyerTransfers")
+  transferRequestsReviewed   TransferRequest[]         @relation("RegistrarReviewedTransfers")
+  ownershipHistoryPrevious   OwnershipHistory[]        @relation("PreviousOwnerHistories")
+  ownershipHistoryNew        OwnershipHistory[]        @relation("NewOwnerHistories")
+  notifications              Notification[]
+  auditLogs                  AuditLog[]
+
+  @@index([email])
+  @@index([walletAddress])
+  @@index([role])
+}
+
+model Land {
+  id                    String   @id @default(uuid())
+  propertyId            String   @unique
+  surveyNumber          String
+  ownerId               String
+  area                  Float
+  landType              String   // RESIDENTIAL, COMMERCIAL, AGRICULTURAL, INDUSTRIAL
+  village               String
+  taluk                 String
+  district              String
+  state                 String
+  latitude              Float
+  longitude             Float
+  description           String?
+  status                String   @default("PENDING_VERIFICATION") 
+  // PENDING_VERIFICATION, UNDER_REVIEW, APPROVED, REJECTED, BLOCKCHAIN_PENDING, REGISTERED, BLOCKCHAIN_FAILED, TRANSFER_PENDING
+  blockchainPropertyId  String?
+  blockchainTxHash      String?
+  blockchainBlockNumber Int?
+  contractAddress       String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  owner                    User                      @relation("LandCurrentOwner", fields: [ownerId], references: [id])
+  documents                LandDocument[]
+  ownershipHistories       OwnershipHistory[]
+  registrationApplications RegistrationApplication[]
+  transferRequests         TransferRequest[]
+  blockchainTransactions   BlockchainTransaction[]
+
+  @@index([propertyId])
+  @@index([surveyNumber])
+  @@index([district])
+  @@index([status])
+  @@index([ownerId])
+}
+
+model LandDocument {
+  id                 String   @id @default(uuid())
+  landId             String
+  uploadedById       String
+  documentType       String   // SALE_DEED, IDENTITY_PROOF, TAX_RECEIPT, SURVEY_SKETCH, ENCUMBRANCE_CERTIFICATE
+  originalFileName   String
+  storagePath        String
+  fileHash           String   // Deterministic SHA-256
+  mimeType           String
+  fileSize           Int
+  verificationStatus String   @default("PENDING") // PENDING, VERIFIED, REJECTED
+  createdAt          DateTime @default(now())
+
+  land       Land @relation(fields: [landId], references: [id], onDelete: Cascade)
+  uploadedBy User @relation("UserUploadedDocs", fields: [uploadedById], references: [id])
+
+  @@index([landId])
+  @@index([fileHash])
+}
+
+model OwnershipHistory {
+  id                String   @id @default(uuid())
+  landId            String
+  previousOwnerId   String
+  newOwnerId        String
+  transferRequestId String?
+  blockchainTxHash  String?
+  transferredAt     DateTime @default(now())
+
+  land          Land             @relation(fields: [landId], references: [id], onDelete: Cascade)
+  previousOwner User             @relation("PreviousOwnerHistories", fields: [previousOwnerId], references: [id])
+  newOwner      User             @relation("NewOwnerHistories", fields: [newOwnerId], references: [id])
+  transferRequest TransferRequest? @relation(fields: [transferRequestId], references: [id])
+
+  @@index([landId])
+  @@index([previousOwnerId])
+  @@index([newOwnerId])
+}
+
+model RegistrationApplication {
+  id           String    @id @default(uuid())
+  applicantId  String
+  landId       String
+  status       String    @default("PENDING_VERIFICATION") // PENDING_VERIFICATION, UNDER_REVIEW, APPROVED, REJECTED
+  remarks      String?
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  applicant  User  @relation("ApplicantApplications", fields: [applicantId], references: [id])
+  land       Land  @relation(fields: [landId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("RegistrarReviewedApplications", fields: [reviewedById], references: [id])
+
+  @@index([applicantId])
+  @@index([landId])
+  @@index([status])
+}
+
+model TransferRequest {
+  id               String    @id @default(uuid())
+  landId           String
+  sellerId         String
+  buyerId          String
+  status           String    @default("PENDING") 
+  // PENDING, UNDER_REVIEW, APPROVED, REJECTED, BLOCKCHAIN_PENDING, COMPLETED, CANCELLED
+  reason           String?
+  reviewedById     String?
+  reviewedAt       DateTime?
+  blockchainTxHash String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  land               Land               @relation(fields: [landId], references: [id], onDelete: Cascade)
+  seller             User               @relation("SellerTransfers", fields: [sellerId], references: [id])
+  buyer              User               @relation("BuyerTransfers", fields: [buyerId], references: [id])
+  reviewedBy         User?              @relation("RegistrarReviewedTransfers", fields: [reviewedById], references: [id])
+  ownershipHistories OwnershipHistory[]
+
+  @@index([landId])
+  @@index([sellerId])
+  @@index([buyerId])
+  @@index([status])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String   // USER_REGISTERED, USER_LOGIN, WALLET_LINKED, LAND_CREATED, DOCUMENT_UPLOADED, etc.
+  entityType String   // USER, LAND, DOCUMENT, TRANSFER, BLOCKCHAIN
+  entityId   String?
+  ipAddress  String?
+  userAgent  String?
+  metadata   String?  // JSON serialized string
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model BlockchainTransaction {
+  id              String   @id @default(uuid())
+  landId          String?
+  transactionHash String   @unique
+  blockNumber     Int?
+  transactionType String   // LAND_REGISTRATION, OWNERSHIP_TRANSFER, DOCUMENT_VERIFICATION
+  fromAddress     String
+  toAddress       String
+  status          String   @default("PENDING") // PENDING, CONFIRMED, FAILED
+  gasUsed         String?
+  createdAt       DateTime @default(now())
+
+  land Land? @relation(fields: [landId], references: [id])
+
+  @@index([transactionHash])
+  @@index([landId])
+  @@index([status])
+}

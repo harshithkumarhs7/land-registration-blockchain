@@ -1,0 +1,37 @@
+{
+  "name": "land-registration-blockchain",
+  "version": "1.0.0",
+  "description": "Production-Style Academic Land Registration Using Blockchain Platform",
+  "private": true,
+  "scripts": {
+    "blockchain:install": "cd blockchain && npm install",
+    "backend:install": "cd backend && npm install",
+    "frontend:install": "cd frontend && npm install",
+    "install:all": "npm run blockchain:install && npm run backend:install && npm run frontend:install",
+    "blockchain": "cd blockchain && npx hardhat node",
+    "compile:contract": "cd blockchain && npx hardhat compile",
+    "deploy:contract": "cd blockchain && npx hardhat run scripts/deploy.ts --network localhost",
+    "test:contract": "cd blockchain && npx hardhat test",
+    "backend:migrate": "cd backend && npx prisma db push",
+    "backend:seed": "cd backend && npm run seed",
+    "backend": "cd backend && npm run dev",
+    "backend:build": "cd backend && npm run build",
+    "test:backend": "cd backend && npm test",
+    "frontend": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "test:all": "npm run test:contract && npm run test:backend"
+  },
+  "keywords": [
+    "blockchain",
+    "land-registration",
+    "ethereum",
+    "hardhat",
+    "solidity",
+    "react",
+    "express",
+    "prisma",
+    "postgresql"
+  ],
+  "author": "Google DeepMind Agentic Pair Programmer",
+  "license": "MIT"
+}

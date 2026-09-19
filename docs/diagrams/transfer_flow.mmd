@@ -1,0 +1,26 @@
+sequenceDiagram
+    autonumber
+    actor Owner as Seller (Current Owner)
+    actor Buyer as Prospective Buyer
+    actor Registrar as Government Sub-Registrar
+    participant API as Express API
+    participant DB as PostgreSQL
+    participant Chain as LandRegistry.sol
+
+    Owner->>API: POST /api/transfers (landId, buyerId, reason)
+    API->>DB: Insert TransferRequest (PENDING) & Set Land to TRANSFER_PENDING
+    API->>Buyer: Send In-App Notification
+
+    Registrar->>API: GET /api/transfers
+    Registrar->>API: POST /api/transfers/:id/approve
+
+    API->>DB: Set TransferRequest status to BLOCKCHAIN_PENDING
+    API->>Chain: transferOwnership(propertyId, buyerWallet, txRef)
+    Chain-->>API: Emit OwnershipTransferred & Return Tx Receipt
+
+    API->>DB: Reassign Land.ownerId to Buyer
+    API->>DB: Insert OwnershipHistory record
+    API->>DB: Set TransferRequest to COMPLETED
+    API->>DB: Record BlockchainTransaction & AuditLog
+    API->>Owner: Notify Title Conveyed
+    API->>Buyer: Notify Ownership Acquired

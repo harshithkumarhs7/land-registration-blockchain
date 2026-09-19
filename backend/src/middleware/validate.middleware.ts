@@ -1,0 +1,31 @@
+import { Request, Response, NextFunction } from 'express';
+import { AnyZodObject, ZodError } from 'zod';
+
+export const validateRequest = (
+  schema: AnyZodObject,
+  source: 'body' | 'query' | 'params' = 'body'
+) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const validated = await schema.parseAsync(req[source]);
+      req[source] = validated;
+      next();
+    } catch (error) {
+      if (error instanceof ZodError) {
+        res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: error.errors.map((e) => ({
+            field: e.path.join('.'),
+            message: e.message,
+          })),
+        });
+        return;
+      }
+      res.status(400).json({
+        success: false,
+        message: 'Malformed request payload',
+      });
+    }
+  };
+};
