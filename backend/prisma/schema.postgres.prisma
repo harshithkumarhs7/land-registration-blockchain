@@ -18,6 +18,15 @@ model User {
   status         String    @default("ACTIVE") // ACTIVE, SUSPENDED
   nonce          String?
   nonceExpiresAt DateTime?
+  
+  // DigiLocker & Aadhaar e-KYC fields (Aadhaar Act 2016 Compliant)
+  isAadhaarVerified Boolean   @default(false)
+  aadhaarMasked     String?   // e.g. "XXXXXXXX9812" (Zero raw 12-digit Aadhaar stored)
+  aadhaarHash       String?   @unique // Deterministic salted SHA-256 hash for duplicate detection
+  digilockerUri     String?   // Official DigiLocker Doc URI e.g. "in.gov.uidai-adhr-XXXXXXXX9812"
+  aadhaarVerifiedAt DateTime?
+  kycData           String?   // Serialized JSON with non-PII/sanitized verified attributes
+  
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

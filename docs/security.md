@@ -26,3 +26,21 @@ BhoomiChain incorporates four cryptographic pillars:
 ### 4. Database / Blockchain Desynchronization
 - **Risk**: The backend updates the database to REGISTERED before confirming the blockchain transaction, leading to phantom records if the EVM reverts.
 - **Defense**: The system strictly enforces the `BLOCKCHAIN_PENDING` transition. The database is updated to `REGISTERED` only **after** the transaction receipt is confirmed and the status equals `1`. If the transaction reverts or times out, the land moves to `BLOCKCHAIN_FAILED`, preserving complete auditability and enabling official retry.
+
+---
+
+## 3. DigiLocker & Aadhaar e-KYC Compliance (Aadhaar Act 2016)
+
+### 1. Zero Raw 12-Digit Aadhaar Storage
+- **Regulatory Requirement**: Section 29 of the Aadhaar Act 2016 strictly prohibits storing or publishing raw 12-digit Aadhaar numbers on public databases or decentralized ledgers.
+- **Implementation**: The BhoomiChain platform never stores the 12-digit number. When verified through DigiLocker or the Aadhaar OTP sandbox, the system preserves only:
+  1. `aadhaarMasked`: An eight-cross prefix with the last four digits visible (e.g., `XXXXXXXX9812`).
+  2. `digilockerUri`: The official URN issued by the national identity gateway (`in.gov.uidai-adhr-XXXXXXXX9812`).
+  3. `aadhaarHash`: A deterministic SHA-256 hash calculated with a confidential system salt.
+
+### 2. Deterministic Hash Deduplication (Anti-Sybil Defense)
+- **Risk**: A malicious actor registers multiple accounts under different emails to register fraudulent claims or bypass transfer limits.
+- **Implementation**: `aadhaarHash = SHA256(rawAadhaarNumber + AADHAAR_SALT)` is stored with a `@unique` constraint in the database. If any user attempts to verify an Aadhaar number that has already been bound to an existing account, the system rejects the transaction with a 400 Conflict error, enforcing a strict 1:1 binding between citizen identity and blockchain land ownership.
+
+### 3. Cryptographic State Validation on Smart Contract
+- Smart contracts commit `metadataHash = keccak256(landJsonData)`. When registrars submit approvals, the metadata payload cryptographically bundles the applicant's verified masked Aadhaar and digital signature reference, ensuring tamper evidence on Ethereum without leaking private PII to the public chain.

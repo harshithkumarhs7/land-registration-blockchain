@@ -38,3 +38,34 @@ BhoomiChain is a hybrid decentralized land registration and title governance pla
 5. **On-Chain Commitment**: Upon approval, the backend interacts with `LandRegistry.sol` using the registrar's authorized private key to execute `registerLand(...)`.
 6. **State Reconciliation & Audit Log**: Emitted on-chain events (`LandRegistered`, `OwnershipTransferred`) are decoded. The transaction hash, block number, and contract address are permanently indexed into PostgreSQL, creating an unshakeable audit trail.
 7. **Multi-Party Conveyance**: Title transfer requires agreement from the seller, prospective buyer, and government registrar. When approved, ownership is reassigned on the smart contract, appending a new block to the immutable chain-of-custody.
+
+---
+
+## 4. Citizen Identity & DigiLocker e-KYC Architecture
+
+BhoomiChain bridges physical citizen legal identity with decentralized title deeds:
+
+```
+[Citizen / Land Owner]
+       |
+       | 1. Enter 12-Digit Aadhaar or Click Connect
+       v
+[DigiLocker / Aadhaar e-KYC Gateway]
+       |
+       | 2. UIDAI OTP Dispatched to Registered Mobile (Simulation / Live API)
+       v
+[Citizen enters OTP]
+       |
+       | 3. Verifies OTP & Issues Signed e-Aadhaar Credential
+       v
+[BhoomiChain Backend]
+       |
+       +---> Generates Masked Aadhaar (XXXXXXXX9812)
+       +---> Computes Salted SHA-256 Hash (Anti-Sybil Deduplication)
+       +---> Discards Raw 12-Digit Number (Aadhaar Act 2016 Compliant)
+       +---> Stores DigiLocker URN (in.gov.uidai-adhr-XXXXXXXX9812)
+       v
+[Blockchain Smart Contract Metadata]
+       |
+       +---> Cryptographic metadataHash binds land title to verified citizen identity
+```

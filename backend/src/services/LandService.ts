@@ -42,6 +42,13 @@ export class LandService {
       );
     }
 
+    if (!owner.isAadhaarVerified) {
+      throw new AppError(
+        'Please complete DigiLocker Aadhaar e-KYC verification before submitting a land registration',
+        400
+      );
+    }
+
     // Check duplicate survey number in same village & district
     const existing = await prisma.land.findFirst({
       where: {
@@ -158,7 +165,7 @@ export class LandService {
         take: limit,
         include: {
           owner: {
-            select: { id: true, name: true, email: true, walletAddress: true },
+            select: { id: true, name: true, email: true, walletAddress: true, isAadhaarVerified: true, aadhaarMasked: true },
           },
           documents: true,
           _count: {
@@ -209,7 +216,17 @@ export class LandService {
       where: { id },
       include: {
         owner: {
-          select: { id: true, name: true, email: true, walletAddress: true, phone: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            walletAddress: true,
+            phone: true,
+            isAadhaarVerified: true,
+            aadhaarMasked: true,
+            digilockerUri: true,
+            aadhaarVerifiedAt: true,
+          },
         },
         documents: {
           include: {
@@ -252,7 +269,11 @@ export class LandService {
       where: { propertyId },
       include: {
         owner: {
-          select: { walletAddress: true }, // Redact personal PII
+          select: {
+            walletAddress: true,
+            isAadhaarVerified: true,
+            aadhaarMasked: true,
+          }, // Redact personal PII, preserve verified Aadhaar proof
         },
         documents: {
           select: {

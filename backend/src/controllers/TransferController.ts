@@ -2,6 +2,18 @@ import { Request, Response, NextFunction } from 'express';
 import { TransferService } from '../services/TransferService.js';
 
 export class TransferController {
+  static async getEligibleBuyers(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const buyers = await TransferService.getEligibleBuyers(req.user!.id);
+      res.status(200).json({
+        success: true,
+        data: { buyers },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async createTransfer(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { landId, buyerId, reason } = req.body;

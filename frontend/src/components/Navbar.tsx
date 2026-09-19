@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Shield, Wallet, LogOut, User as UserIcon, CheckCircle2 } from 'lucide-react';
+import { Shield, Wallet, LogOut, User as UserIcon, CheckCircle2, ShieldCheck, Fingerprint } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useWeb3 } from '../context/Web3Context';
 import { NotificationDropdown } from './NotificationDropdown';
+import { DigiLockerModal } from './DigiLockerModal';
 import { formatAddress } from '../utils/crypto';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { account, isConnecting, connectWallet, linkWalletToAccount } = useWeb3();
   const navigate = useNavigate();
+  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
 
   const handleWalletAction = async () => {
     if (!account) {
@@ -25,7 +27,8 @@ export const Navbar: React.FC = () => {
     user.walletAddress.toLowerCase() === account.toLowerCase();
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
+    <>
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
@@ -75,6 +78,36 @@ export const Navbar: React.FC = () => {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3">
+            {/* DigiLocker Aadhaar e-KYC Status Button */}
+            {isAuthenticated && user && (
+              <button
+                onClick={() => setIsKycModalOpen(true)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                  user.isAadhaarVerified
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                    : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 animate-pulse'
+                }`}
+                title={
+                  user.isAadhaarVerified
+                    ? 'Identity Verified via DigiLocker Aadhaar'
+                    : 'Click to complete DigiLocker Aadhaar e-KYC'
+                }
+              >
+                {user.isAadhaarVerified ? (
+                  <>
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="hidden sm:inline">Aadhaar:</span>
+                    <span className="font-mono">{user.aadhaarMasked || 'Verified'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Fingerprint className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Verify Aadhaar</span>
+                  </>
+                )}
+              </button>
+            )}
+
             {/* MetaMask Wallet Button */}
             <button
               onClick={handleWalletAction}
@@ -157,5 +190,12 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
     </header>
+
+      {/* DigiLocker Aadhaar e-KYC Modal */}
+      <DigiLockerModal
+        isOpen={isKycModalOpen}
+        onClose={() => setIsKycModalOpen(false)}
+      />
+    </>
   );
 };

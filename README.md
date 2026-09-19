@@ -10,6 +10,8 @@
 
 A production-grade, tamper-resistant digital cadastre and real estate title conveyance platform leveraging Ethereum-compatible smart contracts, PostgreSQL relational state, and deterministic SHA-256 cryptographic document integrity verification.
 
+> 📖 **Complete Technical Guide & Flow Architecture**: See [Technical Architecture, Tech Stack & End-to-End Workflows](docs/technical_architecture_and_flows.md) for full architectural layer specifications, technology justifications, sequence diagrams, and security models.
+
 ---
 
 ## 📋 Table of Contents

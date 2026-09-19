@@ -8,6 +8,7 @@ import { createTransferSchema } from '../validators/transfer.validator.js';
 const router = Router();
 
 router.get('/', authenticateJwt, TransferController.getTransfers);
+router.get('/eligible-buyers', authenticateJwt, TransferController.getEligibleBuyers);
 
 router.post(
   '/',

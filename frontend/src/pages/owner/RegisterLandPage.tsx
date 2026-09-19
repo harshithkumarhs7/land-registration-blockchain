@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlusCircle, Upload, ShieldCheck, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
+import { PlusCircle, Upload, ShieldCheck, CheckCircle2, AlertTriangle, ArrowRight, Fingerprint } from 'lucide-react';
 import { ApiService } from '../../api/client';
 import { MapLocationPicker } from '../../components/MapLocationPicker';
+import { DigiLockerModal } from '../../components/DigiLockerModal';
 import { calculateFileSha256 } from '../../utils/crypto';
 import { useAuth } from '../../context/AuthContext';
 
 export const RegisterLandPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
 
   const [surveyNumber, setSurveyNumber] = useState('');
   const [area, setArea] = useState('');
@@ -43,6 +45,10 @@ export const RegisterLandPage: React.FC = () => {
     e.preventDefault();
     if (!user?.walletAddress) {
       setError('You must connect and link your Ethereum MetaMask wallet before submitting a land registration.');
+      return;
+    }
+    if (!user?.isAadhaarVerified) {
+      setError('You must complete DigiLocker Aadhaar e-KYC verification before submitting a land registration.');
       return;
     }
     if (!file) {
@@ -113,6 +119,52 @@ export const RegisterLandPage: React.FC = () => {
       )}
 
       <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+        {/* Citizen e-KYC Identity Verification Banner */}
+        <div
+          className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+            user?.isAadhaarVerified
+              ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+              : 'bg-amber-50/70 border-amber-200 text-amber-900'
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <div
+              className={`p-2.5 rounded-xl ${
+                user?.isAadhaarVerified
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : 'bg-amber-100 text-amber-700'
+              }`}
+            >
+              <Fingerprint className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  {user?.isAadhaarVerified ? 'Aadhaar e-KYC Verified' : 'Aadhaar e-KYC Mandatory'}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-white border border-slate-200 text-slate-700">
+                  DigiLocker National Portal
+                </span>
+              </div>
+              <p className="text-xs mt-0.5 text-slate-600">
+                {user?.isAadhaarVerified
+                  ? `Authenticated citizen identity: ${user.aadhaarMasked || 'XXXXXXXX9812'}`
+                  : 'UIDAI citizen verification is mandatory for legal title deeds under National Land Digitization.'}
+              </p>
+            </div>
+          </div>
+
+          {!user?.isAadhaarVerified && (
+            <button
+              type="button"
+              onClick={() => setIsKycModalOpen(true)}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs px-3.5 py-2 rounded-xl shadow-xs transition shrink-0"
+            >
+              Verify with DigiLocker
+            </button>
+          )}
+        </div>
+
         {/* Cadastral Information */}
         <div className="space-y-4">
           <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
@@ -309,6 +361,11 @@ export const RegisterLandPage: React.FC = () => {
           <span>{submitting ? 'Submitting Application & Hashing...' : 'Submit Land Registration Application'}</span>
         </button>
       </form>
+
+      <DigiLockerModal
+        isOpen={isKycModalOpen}
+        onClose={() => setIsKycModalOpen(false)}
+      />
     </div>
   );
 };

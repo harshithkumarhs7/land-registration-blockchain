@@ -9,6 +9,31 @@ const prisma = new PrismaClient();
 
 export class TransferService {
   /**
+   * Retrieves active prospective buyers eligible for ownership transfer
+   */
+  static async getEligibleBuyers(excludeUserId?: string) {
+    const buyers = await prisma.user.findMany({
+      where: {
+        status: 'ACTIVE',
+        role: { in: ['BUYER', 'LAND_OWNER'] },
+        ...(excludeUserId ? { id: { not: excludeUserId } } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        walletAddress: true,
+        isAadhaarVerified: true,
+        aadhaarMasked: true,
+        role: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+    return buyers;
+  }
+
+  /**
    * Initiates a multi-step ownership transfer request
    */
   static async createTransferRequest(
@@ -49,6 +74,14 @@ export class TransferService {
 
     if (!buyer.walletAddress) {
       throw new AppError('Buyer must have a linked Ethereum wallet to receive on-chain land title', 400);
+    }
+
+    if (!land.owner.isAadhaarVerified) {
+      throw new AppError('Seller must complete DigiLocker Aadhaar e-KYC verification before initiating property transfer', 400);
+    }
+
+    if (!buyer.isAadhaarVerified) {
+      throw new AppError('Buyer must complete DigiLocker Aadhaar e-KYC verification before being nominated as property recipient', 400);
     }
 
     // Check for existing pending transfer
@@ -143,10 +176,10 @@ export class TransferService {
         include: {
           land: true,
           seller: {
-            select: { id: true, name: true, email: true, walletAddress: true },
+            select: { id: true, name: true, email: true, walletAddress: true, isAadhaarVerified: true, aadhaarMasked: true },
           },
           buyer: {
-            select: { id: true, name: true, email: true, walletAddress: true },
+            select: { id: true, name: true, email: true, walletAddress: true, isAadhaarVerified: true, aadhaarMasked: true },
           },
           reviewedBy: {
             select: { id: true, name: true, email: true },

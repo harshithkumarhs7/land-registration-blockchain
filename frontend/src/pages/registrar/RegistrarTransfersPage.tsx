@@ -45,13 +45,18 @@ export const RegistrarTransfersPage: React.FC = () => {
     setTxHash(undefined);
     setBlockNumber(undefined);
 
-    try {
-      setTimeout(() => {
+    let isCompleted = false;
+    const miningTimer = setTimeout(() => {
+      if (!isCompleted) {
         setTxStatus('MINING');
         setModalMessage('Mining ownership transfer transaction and appending provenance block...');
-      }, 700);
+      }
+    }, 400);
 
+    try {
       const res = await ApiService.approveTransfer(transfer.id);
+      isCompleted = true;
+      clearTimeout(miningTimer);
       const data = res.data.data;
 
       setTxStatus('CONFIRMED');
@@ -61,6 +66,8 @@ export const RegistrarTransfersPage: React.FC = () => {
 
       fetchTransfers();
     } catch (err: any) {
+      isCompleted = true;
+      clearTimeout(miningTimer);
       setTxStatus('FAILED');
       setModalMessage(err.response?.data?.message || err.message || 'On-chain transfer reverted');
     }

@@ -1,6 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { generatePdfDocument } from '../src/utils/pdfGenerator.js';
 
 const prisma = new PrismaClient();
 
@@ -27,7 +30,10 @@ async function main() {
   const ownerPassword = await bcrypt.hash('Owner@123456', passwordSalt);
   const buyerPassword = await bcrypt.hash('Buyer@123456', passwordSalt);
 
-  // 1. Seed Users
+  // 1. Seed Users with Aadhaar & DigiLocker e-KYC credentials
+  const salt = 'bhoomichain-aadhaar-salt-2024-secure-unique-token';
+  const getHash = (num: string) => crypto.createHash('sha256').update(num + salt).digest('hex');
+
   const admin = await prisma.user.create({
     data: {
       name: 'Dr. Rajesh Sharma (Administrator)',
@@ -37,6 +43,12 @@ async function main() {
       walletAddress: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Hardhat #0
       phone: '+91 98765 43210',
       status: 'ACTIVE',
+      isAadhaarVerified: true,
+      aadhaarMasked: 'XXXXXXXX1111',
+      aadhaarHash: getHash('999900001111'),
+      digilockerUri: 'in.gov.uidai-adhr-XXXXXXXX1111',
+      aadhaarVerifiedAt: new Date(),
+      kycData: JSON.stringify({ fullName: 'Rajesh Sharma', gender: 'M', yob: '1975', state: 'Karnataka', district: 'Bengaluru Urban' }),
     },
   });
 
@@ -49,6 +61,12 @@ async function main() {
       walletAddress: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8', // Hardhat #1
       phone: '+91 98765 43211',
       status: 'ACTIVE',
+      isAadhaarVerified: true,
+      aadhaarMasked: 'XXXXXXXX2222',
+      aadhaarHash: getHash('999900002222'),
+      digilockerUri: 'in.gov.uidai-adhr-XXXXXXXX2222',
+      aadhaarVerifiedAt: new Date(),
+      kycData: JSON.stringify({ fullName: 'Sunita Rao', gender: 'F', yob: '1982', state: 'Karnataka', district: 'Bengaluru Urban' }),
     },
   });
 
@@ -61,6 +79,12 @@ async function main() {
       walletAddress: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', // Hardhat #2
       phone: '+91 98765 43212',
       status: 'ACTIVE',
+      isAadhaarVerified: true,
+      aadhaarMasked: 'XXXXXXXX9812',
+      aadhaarHash: getHash('999900009812'),
+      digilockerUri: 'in.gov.uidai-adhr-XXXXXXXX9812',
+      aadhaarVerifiedAt: new Date(),
+      kycData: JSON.stringify({ fullName: 'Vikramaditya Verma', gender: 'M', yob: '1988', state: 'Karnataka', district: 'Bengaluru Urban' }),
     },
   });
 
@@ -73,15 +97,84 @@ async function main() {
       walletAddress: '0x90F79bf6EB2c4f870365E785982E1f101E93b906', // Hardhat #3
       phone: '+91 98765 43213',
       status: 'ACTIVE',
+      isAadhaarVerified: true,
+      aadhaarMasked: 'XXXXXXXX4567',
+      aadhaarHash: getHash('999900004567'),
+      digilockerUri: 'in.gov.uidai-adhr-XXXXXXXX4567',
+      aadhaarVerifiedAt: new Date(),
+      kycData: JSON.stringify({ fullName: 'Ananya Deshmukh', gender: 'F', yob: '1995', state: 'Karnataka', district: 'Bengaluru Urban' }),
     },
   });
 
   console.log('✅ Created 4 standard demo users across all roles.');
 
-  // Deterministic sample document hashes (SHA-256)
-  const doc1Hash = crypto.createHash('sha256').update('Sample Sale Deed Document 2024 - PROP-KA-BLR-001').digest('hex');
-  const doc2Hash = crypto.createHash('sha256').update('Official Cadastral Survey Sketch - Survey 142/2B').digest('hex');
-  const doc3Hash = crypto.createHash('sha256').update('Agricultural Clearance Certificate - PROP-KA-MYS-002').digest('hex');
+  // Ensure uploads directory exists
+  const uploadDir = path.resolve('uploads');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
+  // Generate realistic seed PDF documents
+  const deedPdfBuffer = generatePdfDocument(
+    'Government of Karnataka - Registered Sale Deed',
+    {
+      'Document Type': 'REGISTERED SALE DEED',
+      'Property ID': 'PROP-KA-BLR-001',
+      'Survey Number': '142/2B',
+      'Village/Area': 'Whitefield, Bengaluru East',
+      'Area': '2400.0 Sq. Ft.',
+      'Registered Owner': 'Vikramaditya Verma',
+      'Aadhaar e-KYC Status': 'VERIFIED (DigiLocker)',
+      'Sub-Registrar': 'Sunita Rao (Bengaluru North)',
+      'Blockchain Registry': 'BhoomiChain Smart Contract 0x5FbDB2315678afecb367f032d93F642f64180aa3',
+    },
+    [
+      'Original registered deed copy under Section 17 of the Registration Act, 1908.',
+      'Title verified clear of encumbrance by Revenue & Survey Department.',
+    ]
+  );
+  fs.writeFileSync(path.join(uploadDir, 'demo-deed-001.pdf'), deedPdfBuffer);
+  const doc1Hash = crypto.createHash('sha256').update(deedPdfBuffer).digest('hex');
+
+  const sketchPdfBuffer = generatePdfDocument(
+    'Department of Survey Settlement & Land Records - Cadastral Map',
+    {
+      'Document Type': 'CADASTRAL SURVEY SKETCH',
+      'Property ID': 'PROP-KA-BLR-001',
+      'Survey Number': '142/2B',
+      'Village/Hobli': 'Whitefield, K.R. Puram Hobli',
+      'Survey Boundary Points': 'North: Survey 142/1 | South: 60ft Road | East: Survey 142/2C | West: Survey 141',
+      'Coordinates': 'Lat 12.9698, Long 77.7500',
+      'Surveyor ID': 'BLR-SURV-8821',
+      'Survey Status': 'APPROVED & GEO-TAGGED',
+    },
+    [
+      'Digitally signed and sealed survey sketch conforming to Karnataka Land Revenue Code.',
+      'Cryptographically verified on BhoomiChain.',
+    ]
+  );
+  fs.writeFileSync(path.join(uploadDir, 'demo-sketch-001.pdf'), sketchPdfBuffer);
+  const doc2Hash = crypto.createHash('sha256').update(sketchPdfBuffer).digest('hex');
+
+  const taxPdfBuffer = generatePdfDocument(
+    'Bruhat Bengaluru Mahanagara Palike - Property Tax Receipt',
+    {
+      'Document Type': 'PROPERTY TAX RECEIPT (CHALLAN)',
+      'Assessment Year': '2024-2025',
+      'Property ID': 'PROP-KA-MYS-002',
+      'Survey Number': '88/1A',
+      'Owner Name': 'Vikramaditya Verma',
+      'Receipt Number': 'BBMP-TAX-2024-998124',
+      'Payment Status': 'PAID (ONLINE)',
+      'Amount Paid': 'Rs. 12,450.00',
+    },
+    [
+      'Official e-Challan receipt for municipal revenue assessment.',
+      'Issued under the Bhoomi digital revenue administration system.',
+    ]
+  );
+  fs.writeFileSync(path.join(uploadDir, 'demo-tax-002.pdf'), taxPdfBuffer);
+  const doc3Hash = crypto.createHash('sha256').update(taxPdfBuffer).digest('hex');
 
   // 2. Seed Registered Land 1 (Fully Registered on Blockchain)
   const registeredLand = await prisma.land.create({
@@ -116,7 +209,7 @@ async function main() {
       storagePath: 'uploads/demo-deed-001.pdf',
       fileHash: doc1Hash,
       mimeType: 'application/pdf',
-      fileSize: 1048576,
+      fileSize: deedPdfBuffer.length,
       verificationStatus: 'VERIFIED',
     },
   });
@@ -130,7 +223,7 @@ async function main() {
       storagePath: 'uploads/demo-sketch-001.pdf',
       fileHash: doc2Hash,
       mimeType: 'application/pdf',
-      fileSize: 524288,
+      fileSize: sketchPdfBuffer.length,
       verificationStatus: 'VERIFIED',
     },
   });
@@ -189,7 +282,7 @@ async function main() {
       storagePath: 'uploads/demo-tax-002.pdf',
       fileHash: doc3Hash,
       mimeType: 'application/pdf',
-      fileSize: 419430,
+      fileSize: taxPdfBuffer.length,
       verificationStatus: 'PENDING',
     },
   });

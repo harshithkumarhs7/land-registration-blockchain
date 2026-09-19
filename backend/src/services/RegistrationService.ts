@@ -34,7 +34,17 @@ export class RegistrationService {
         take: limit,
         include: {
           applicant: {
-            select: { id: true, name: true, email: true, walletAddress: true, phone: true },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              walletAddress: true,
+              phone: true,
+              isAadhaarVerified: true,
+              aadhaarMasked: true,
+              digilockerUri: true,
+              aadhaarVerifiedAt: true,
+            },
           },
           land: {
             include: {
@@ -68,7 +78,17 @@ export class RegistrationService {
       where: { id },
       include: {
         applicant: {
-          select: { id: true, name: true, email: true, walletAddress: true, phone: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            walletAddress: true,
+            phone: true,
+            isAadhaarVerified: true,
+            aadhaarMasked: true,
+            digilockerUri: true,
+            aadhaarVerifiedAt: true,
+          },
         },
         land: {
           include: {
@@ -118,6 +138,13 @@ export class RegistrationService {
 
     if (!application.applicant.walletAddress) {
       throw new AppError('Applicant does not have a linked Ethereum wallet address', 400);
+    }
+
+    if (!application.applicant.isAadhaarVerified) {
+      throw new AppError(
+        'Applicant must complete DigiLocker Aadhaar e-KYC verification before government registration approval',
+        400
+      );
     }
 
     if (application.land.documents.length === 0) {

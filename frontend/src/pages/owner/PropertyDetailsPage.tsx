@@ -116,6 +116,11 @@ export const PropertyDetailsPage: React.FC = () => {
           <div className="p-3 bg-slate-50 rounded-xl">
             <span className="text-slate-400 block text-[11px]">Owner</span>
             <span className="font-bold text-slate-800 truncate block">{land.owner?.name}</span>
+            <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">
+              {land.owner?.isAadhaarVerified
+                ? `Aadhaar: ${land.owner.aadhaarMasked || 'Verified'}`
+                : 'e-KYC Pending'}
+            </span>
           </div>
           <div className="p-3 bg-slate-50 rounded-xl">
             <span className="text-slate-400 block text-[11px]">Owner Wallet</span>

@@ -56,14 +56,18 @@ export const RegistrarApplicationsPage: React.FC = () => {
     setTxHash(undefined);
     setBlockNumber(undefined);
 
-    try {
-      // Step 1: mining animation
-      setTimeout(() => {
+    let isCompleted = false;
+    const miningTimer = setTimeout(() => {
+      if (!isCompleted) {
         setTxStatus('MINING');
         setModalMessage('Sub-Registrar role verified. Mining block on Ethereum ledger...');
-      }, 700);
+      }
+    }, 400);
 
+    try {
       const res = await ApiService.approveApplication(application.id, 'Verified by Sub-Registrar');
+      isCompleted = true;
+      clearTimeout(miningTimer);
       const data = res.data.data;
 
       setTxStatus('CONFIRMED');
@@ -73,6 +77,8 @@ export const RegistrarApplicationsPage: React.FC = () => {
 
       fetchApplications();
     } catch (err: any) {
+      isCompleted = true;
+      clearTimeout(miningTimer);
       setTxStatus('FAILED');
       setModalMessage(err.response?.data?.message || err.message || 'Blockchain transaction reverted');
     }
@@ -149,6 +155,19 @@ export const RegistrarApplicationsPage: React.FC = () => {
                       <div className="font-semibold text-slate-900">{app.applicant?.name}</div>
                       <div className="font-mono text-[10px] text-slate-400">
                         {formatAddress(app.applicant?.walletAddress)}
+                      </div>
+                      <div className="mt-1">
+                        {app.applicant?.isAadhaarVerified ? (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                            Aadhaar: {app.applicant.aadhaarMasked || 'Verified'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                            <AlertTriangle className="w-3 h-3 text-rose-500" />
+                            e-KYC Pending
+                          </span>
+                        )}
                       </div>
                     </td>
 

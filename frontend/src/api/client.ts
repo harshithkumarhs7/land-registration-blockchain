@@ -71,6 +71,7 @@ export const ApiService = {
 
   // Transfers
   getTransfers: (params?: any) => api.get('/transfers', { params }),
+  getEligibleBuyers: () => api.get('/transfers/eligible-buyers'),
   createTransfer: (data: any) => api.post('/transfers', data),
   approveTransfer: (id: string) => api.post(`/transfers/${id}/approve`),
   rejectTransfer: (id: string, reason?: string) =>
@@ -99,4 +100,15 @@ export const ApiService = {
   // Public
   searchPublicLands: (params?: any) => api.get('/public/lands', { params }),
   verifyPublicProperty: (propertyId: string) => api.get(`/public/verify/${propertyId}`),
+
+  // DigiLocker & Aadhaar e-KYC
+  getKycStatus: () => api.get('/kyc/status'),
+  requestAadhaarOtp: (aadhaarNumber: string) =>
+    api.post('/kyc/aadhaar/otp-request', { aadhaarNumber }),
+  verifyAadhaarOtp: (txnId: string, otp: string) =>
+    api.post('/kyc/aadhaar/otp-verify', { txnId, otp }),
+  getDigiLockerAuthUrl: () => api.get('/kyc/digilocker/auth-url'),
+  handleDigiLockerCallback: (code: string, state: string) =>
+    api.post('/kyc/digilocker/callback', { code, state }),
+  simulateDigiLockerConnect: () => api.post('/kyc/digilocker/simulate'),
 };

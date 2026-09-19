@@ -30,4 +30,14 @@ export const config = {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 mins
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '500', 10),
   },
+  digilocker: {
+    clientId: process.env.DIGILOCKER_CLIENT_ID || 'BHOOMI_CHAIN_SANDBOX_CLIENT_ID',
+    clientSecret: process.env.DIGILOCKER_CLIENT_SECRET || 'sandbox_secret_key_987654321',
+    redirectUri: process.env.DIGILOCKER_REDIRECT_URI || 'http://localhost:5173/kyc/digilocker/callback',
+    authUrl: process.env.DIGILOCKER_AUTH_URL || 'https://digilocker.merimegh.gov.in/public/oauth2/1/authorize',
+    tokenUrl: process.env.DIGILOCKER_TOKEN_URL || 'https://digilocker.merimegh.gov.in/public/oauth2/1/token',
+    apiBaseUrl: process.env.DIGILOCKER_API_URL || 'https://digilocker.merimegh.gov.in/public/oauth2/2',
+    isSandbox: process.env.DIGILOCKER_SANDBOX !== 'false', // Default true for zero-credential academic evaluation
+    aadhaarSalt: process.env.AADHAAR_SALT || 'bhoomichain-aadhaar-salt-2024-secure-unique-token',
+  },
 };

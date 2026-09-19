@@ -23,6 +23,7 @@ export const walletNonceSchema = z.object({
 export const walletVerifySchema = z.object({
   walletAddress: z.string().regex(ethAddressRegex, 'Invalid Ethereum wallet address'),
   signature: z.string().min(1, 'Signature is required'),
+  message: z.string().min(1, 'Challenge message is required'),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

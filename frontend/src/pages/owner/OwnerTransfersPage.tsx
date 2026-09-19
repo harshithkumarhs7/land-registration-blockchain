@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ArrowLeftRight, CheckCircle2, AlertTriangle, PlusCircle, Building2 } from 'lucide-react';
+import { ArrowLeftRight, CheckCircle2, AlertTriangle, PlusCircle, Building2, ShieldCheck, Wallet, UserCheck, Info } from 'lucide-react';
 import { ApiService } from '../../api/client';
 import { Land, TransferRequest } from '../../types';
 import { StatusBadge } from '../../components/StatusBadge';
-import { formatDate } from '../../utils/crypto';
+import { formatDate, formatAddress } from '../../utils/crypto';
 
 export const OwnerTransfersPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -23,16 +23,18 @@ export const OwnerTransfersPage: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const selectedBuyer = buyers.find((b) => b.id === buyerId);
+
   const fetchData = async () => {
     try {
-      const [transRes, landsRes, usersRes] = await Promise.all([
+      const [transRes, landsRes, buyersRes] = await Promise.all([
         ApiService.getTransfers(),
         ApiService.getMyProperties(),
-        ApiService.getUsers({ role: 'BUYER' }).catch(() => ({ data: { data: { users: [] } } })),
+        ApiService.getEligibleBuyers().catch(() => ({ data: { data: { buyers: [] } } })),
       ]);
       setTransfers(transRes.data.data.transfers || []);
       setMyLands(landsRes.data.data.lands?.filter((l: Land) => l.status === 'REGISTERED') || []);
-      setBuyers(usersRes.data.data.users || []);
+      setBuyers(buyersRes.data.data.buyers || []);
     } catch (err) {
       console.error('Failed to load transfers:', err);
     } finally {
@@ -124,7 +126,12 @@ export const OwnerTransfersPage: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="font-semibold text-slate-700">Assign Prospective Buyer *</label>
+              <div className="flex items-center justify-between">
+                <label className="font-semibold text-slate-700">Assign Prospective Buyer *</label>
+                <span className="text-[10px] text-slate-400 font-medium">
+                  {buyers.length} {buyers.length === 1 ? 'buyer' : 'buyers'} available
+                </span>
+              </div>
               <select
                 value={buyerId}
                 onChange={(e) => setBuyerId(e.target.value)}
@@ -134,12 +141,74 @@ export const OwnerTransfersPage: React.FC = () => {
                 <option value="">-- Select buyer --</option>
                 {buyers.map((b) => (
                   <option key={b.id} value={b.id}>
-                    {b.name} ({b.email})
+                    {b.name} ({b.email}) {b.isAadhaarVerified ? '✓ Verified' : '⚠ KYC Pending'}
                   </option>
                 ))}
               </select>
             </div>
           </div>
+
+          {/* Selected Buyer Summary Card */}
+          {selectedBuyer && (
+            <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">
+                  {selectedBuyer.name.charAt(0)}
+                </div>
+                <div>
+                  <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                    <span>{selectedBuyer.name}</span>
+                    <span className="text-slate-400 font-normal">({selectedBuyer.email})</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 mt-0.5">
+                    <span className="flex items-center gap-1">
+                      <Wallet className="w-3 h-3 text-slate-400" />
+                      {selectedBuyer.walletAddress ? (
+                        <span className="font-mono text-slate-700">{formatAddress(selectedBuyer.walletAddress)}</span>
+                      ) : (
+                        <span className="text-amber-600 font-semibold">No Wallet Linked</span>
+                      )}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <ShieldCheck className={`w-3 h-3 ${selectedBuyer.isAadhaarVerified ? 'text-emerald-600' : 'text-amber-600'}`} />
+                      {selectedBuyer.isAadhaarVerified ? (
+                        <span className="text-emerald-700 font-semibold">DigiLocker: {selectedBuyer.aadhaarMasked}</span>
+                      ) : (
+                        <span className="text-amber-600 font-semibold">Aadhaar KYC Required</span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="shrink-0">
+                {selectedBuyer.isAadhaarVerified && selectedBuyer.walletAddress ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    Eligible for Transfer
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                    <AlertTriangle className="w-3 h-3 text-amber-600" />
+                    Pending Verification
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Quick Helper for Demo / Testing */}
+          {buyers.length === 0 ? (
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs flex items-center gap-2">
+              <Info className="w-4 h-4 text-blue-600 shrink-0" />
+              <span>
+                No prospective buyers registered yet. You can sign out and register a new user as a <strong>Buyer</strong> or use the pre-seeded account <strong>buyer@gmail.com</strong>.
+              </span>
+            </div>
+          ) : !buyerId ? (
+            <p className="text-[11px] text-slate-500 italic">
+              💡 Tip: Pre-seeded buyer <strong>Ananya Deshmukh (buyer@gmail.com)</strong> is verified via DigiLocker and ready for instant transfer testing.
+            </p>
+          ) : null}
 
           <div className="space-y-1">
             <label className="font-semibold text-slate-700">Conveyance / Transfer Reason *</label>
@@ -203,6 +272,17 @@ export const OwnerTransfersPage: React.FC = () => {
                         {req.buyer?.name}
                       </div>
                       <div className="text-[11px] text-slate-400">{req.buyer?.email}</div>
+                      <div className="mt-1">
+                        {req.buyer?.isAadhaarVerified ? (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            Aadhaar: {req.buyer.aadhaarMasked || 'Verified'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                            e-KYC Pending
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3.5 px-4">
                       <StatusBadge status={req.status} />

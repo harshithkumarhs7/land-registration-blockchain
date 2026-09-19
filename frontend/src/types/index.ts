@@ -8,6 +8,11 @@ export interface User {
   walletAddress?: string | null;
   phone?: string | null;
   status: 'ACTIVE' | 'SUSPENDED';
+  isAadhaarVerified?: boolean;
+  aadhaarMasked?: string | null;
+  digilockerUri?: string | null;
+  aadhaarVerifiedAt?: string | null;
+  kycData?: any | null;
   createdAt: string;
 }
 

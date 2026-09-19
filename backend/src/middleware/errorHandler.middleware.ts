@@ -31,6 +31,16 @@ export const errorHandler = (
     return;
   }
 
+  // Handle Zod validation errors
+  if (err.name === 'ZodError' || err.errors) {
+    res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: err.errors,
+    });
+    return;
+  }
+
   // Handle Multer errors
   if (err.name === 'MulterError') {
     if (err.code === 'LIMIT_FILE_SIZE') {

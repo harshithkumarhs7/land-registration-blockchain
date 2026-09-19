@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
+import { ethers } from 'ethers';
 import app from '../src/app.js';
 import { PrismaClient } from '@prisma/client';
 
@@ -102,6 +103,30 @@ describe('Land Registration Backend API Integration Suite', () => {
         .send({ walletAddress: '0xinvalidEthereumAddress' });
 
       expect(res.status).toBe(400);
+    });
+
+    it('should successfully verify cryptographic signature and link wallet', async () => {
+      const wallet = ethers.Wallet.createRandom();
+      const nonceRes = await request(app)
+        .post('/api/wallet/nonce')
+        .send({ walletAddress: wallet.address });
+
+      expect(nonceRes.status).toBe(200);
+      const message = nonceRes.body.data.message;
+      const signature = await wallet.signMessage(message);
+
+      const linkRes = await request(app)
+        .post('/api/wallet/link')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({
+          walletAddress: wallet.address,
+          signature,
+          message,
+        });
+
+      expect(linkRes.status).toBe(200);
+      expect(linkRes.body.success).toBe(true);
+      expect(linkRes.body.data.user.walletAddress).toBe(wallet.address.toLowerCase());
     });
   });
 

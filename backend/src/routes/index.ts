@@ -9,6 +9,7 @@ import blockchainRoutes from './blockchain.routes.js';
 import adminRoutes from './admin.routes.js';
 import notificationRoutes from './notification.routes.js';
 import publicRoutes from './public.routes.js';
+import kycRoutes from './kyc.routes.js';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/blockchain', blockchainRoutes);
 router.use('/admin', adminRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/public', publicRoutes);
+router.use('/kyc', kycRoutes);
 
 export default router;

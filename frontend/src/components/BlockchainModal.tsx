@@ -28,19 +28,21 @@ export const BlockchainModal: React.FC<BlockchainModalProps> = ({
             <Cpu className="w-5 h-5 text-blue-700" />
             <h3 className="text-sm font-bold text-slate-900">EVM Blockchain Operation</h3>
           </div>
-          {status !== 'SUBMITTING' && status !== 'MINING' && (
-            <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-700">
-              <X className="w-5 h-5" />
-            </button>
-          )}
+          <button
+            onClick={onClose}
+            className="p-1 text-slate-400 hover:text-slate-700 transition"
+            title="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <div className="text-center py-4 space-y-3">
-          {status === 'SUBMITTING' || status === 'MINING' ? (
+          {(status === 'SUBMITTING' || status === 'MINING') && !txHash ? (
             <div className="flex justify-center">
               <Loader2 className="w-12 h-12 text-blue-700 animate-spin" />
             </div>
-          ) : status === 'CONFIRMED' ? (
+          ) : status === 'CONFIRMED' || txHash ? (
             <div className="flex justify-center">
               <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
                 <CheckCircle className="w-8 h-8" />
@@ -52,10 +54,13 @@ export const BlockchainModal: React.FC<BlockchainModalProps> = ({
 
           <div>
             <h4 className="text-base font-bold text-slate-800">
-              {status === 'SUBMITTING' && 'Broadcasting Transaction...'}
-              {status === 'MINING' && 'Mining Block on Hardhat Node...'}
-              {status === 'CONFIRMED' && 'Transaction Confirmed on Blockchain!'}
-              {status === 'FAILED' && 'Operation Encountered an Error'}
+              {status === 'CONFIRMED' || txHash
+                ? 'Transaction Confirmed on Blockchain!'
+                : status === 'SUBMITTING'
+                ? 'Broadcasting Transaction...'
+                : status === 'MINING'
+                ? 'Mining Block on Hardhat Node...'
+                : 'Operation Encountered an Error'}
             </h4>
             <p className="text-xs text-slate-500 mt-1">{message}</p>
           </div>
@@ -76,7 +81,7 @@ export const BlockchainModal: React.FC<BlockchainModalProps> = ({
           )}
         </div>
 
-        {status === 'CONFIRMED' && (
+        {(status === 'CONFIRMED' || !!txHash) && (
           <button
             onClick={onClose}
             className="w-full py-2.5 rounded-xl bg-blue-900 text-white font-semibold text-xs hover:bg-blue-800 transition"
